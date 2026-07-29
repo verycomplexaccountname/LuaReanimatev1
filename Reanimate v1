@@ -1,6 +1,7 @@
 -- by using this script you agree to the terms and conditions
 --dont skid, credit the owner if you use it or a clip of this script
 -- thats it
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/verycomplexaccountname/LuaReanimatev1/refs/heads/main/Reanimate%20v1"))()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -18,6 +19,14 @@ local hum = chr:WaitForChild("Humanoid")
 hum.BreakJointsOnDeath = false; hum.MaxHealth = math.huge; hum.Health = math.huge
 for _, p in ipairs(chr:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
 pcall(function() local a = chr:FindFirstChild("Animate"); if a then a:Destroy() end end)
+pcall(function()
+	local animator = hum:FindFirstChildOfClass("Animator")
+	if animator then
+		for _, track in ipairs(animator:GetPlayingAnimationTracks()) do track:Stop() end
+		animator:Destroy()
+	end
+	hum.EvaluateStateMachine = false
+end)
 
 local joints = {}; local sine = 0
 local cloneChar = nil
