@@ -2,6 +2,7 @@
 --dont skid, credit the owner if you use it or a clip of this script
 -- thats it
 -- loadstring(game:HttpGet("https://raw.githubusercontent.com/verycomplexaccountname/LuaReanimatev1/refs/heads/main/Reanimate%20v1"))()
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -26,65 +27,46 @@ pcall(function()
 	end
 end)
 
-local joints = {}; local cloneChar = nil
-local cloneChar = nil
+local motors = {}; local sine = 0; local scale = chr:GetScale()
 
 local function setup()
-	table.clear(joints)
+	table.clear(motors)
 	for _, v in ipairs(chr:GetDescendants()) do
-		if not v:IsA("Motor6D") or not v.Part0 or not v.Part1 or v.Name == "RightGrip" then continue end
-		local p0, p1 = v.Part0, v.Part1
-		v.Enabled = false
-		local att0 = Instance.new("Attachment"); att0.Name=v.Name.."_C0"; att0.CFrame=v.C0; att0.Parent=p0
-		local att1 = Instance.new("Attachment"); att1.Name=v.Name.."_C1"; att1.CFrame=v.C1; att1.Parent=p1
-		local bs = Instance.new("BallSocketConstraint"); bs.Name=v.Name.."_BS"
-		bs.Attachment0=att0; bs.Attachment1=att1; bs.Parent=p0; bs.LimitsEnabled=false
-		table.insert(joints,{motor=v,bs=bs,att0=att0,att1=att1,p1=p1,name=v.Name})
+		if v:IsA("Motor6D") and v.Part0 and v.Part1 and v.Name ~= "RightGrip" then
+			table.insert(motors, {motor=v, c0=v.C0, c1=v.C1, name=v.Name})
+		end
 	end
 end
 
-local function createClone()
-	if cloneChar and cloneChar.Parent then cloneChar:Destroy() end
-	cloneChar = chr:Clone(); cloneChar.Name = "Spec_"..chr.Name; cloneChar.Parent = Workspace
-	for _, v in ipairs(cloneChar:GetDescendants()) do
-		if v:IsA("BasePart") then v.CanCollide = false; v.Transparency = 0.5 end
-		if v:IsA("ForceField") then v:Destroy() end
-	end
-	local hClone = cloneChar:FindFirstChildOfClass("Humanoid")
-	if hClone then hClone.BreakJointsOnDeath=false; hClone.MaxHealth=math.huge; hClone.Health=math.huge; hClone.DisplayDistanceType=Enum.HumanoidDisplayDistanceType.None
-		local aClone=hClone:FindFirstChildOfClass("Animator"); if aClone then aClone:Destroy() end end
-	local hrpClone = cloneChar:FindFirstChild("HumanoidRootPart")
-	if hrpClone then hrpClone.CFrame=hrp.CFrame*CFrame.new(15,0,0); hrpClone.Anchored=true end
-	local head = cloneChar:FindFirstChild("Head") or cloneChar:FindFirstChild("HumanoidRootPart")
-	if head then
-		local bill = Instance.new("BillboardGui",head); bill.Size=UDim2.new(0,120,0,30); bill.StudsOffset=Vector3.new(0,3,0)
-		local txt = Instance.new("TextLabel",bill); txt.Size=UDim2.new(1,0,1,0); txt.BackgroundTransparency=1
-		txt.Text="OTHERS SEE THIS"; txt.Font=Enum.Font.Code; txt.TextSize=12; txt.TextColor3=Color3.fromRGB(255,200,100); txt.TextStrokeTransparency=0.3
-	end
-end
-
+-- keep motor6ds enabled, drive Transform (replicates on good executors)
 RunService.Stepped:Connect(function()
 	settings().Physics.AllowSleep=false; plr.SimulationRadius=2147483647
-	pcall(function() sethiddenproperty(plr,"MaximumSimulationRadius",math.huge); plr.ReplicationFocus=chr end)
+	if sethiddenproperty then pcall(function() sethiddenproperty(plr,"MaximumSimulationRadius",math.huge); plr.ReplicationFocus=chr end) end
 end)
 
 RunService.PostSimulation:Connect(function(dt)
 	if not getgenv().LimbReanim then return end
-	if cloneChar and cloneChar.Parent then
-		local cHRP = cloneChar:FindFirstChild("HumanoidRootPart")
-		if cHRP then cHRP.CFrame = hrp.CFrame * CFrame.new(15, 0, 0) end
+	sine = sine + dt
+	for i, e in ipairs(motors) do
+		local m = e.motor
+		if not m or not m.Parent then continue end
+		local ph = (i / #motors) * math.pi * 2
+		local off = CFrame.new(
+			math.sin(sine*0.7+ph)*0.5, math.sin(sine*0.9+ph+0.5)*0.5, math.cos(sine*1.1+ph+1)*0.5
+		) * CFrame.Angles(
+			math.sin(sine*1.3+ph*0.5)*0.3, math.sin(sine*1.1+ph*0.3)*0.4, math.sin(sine*0.8+ph*0.7)*0.25
+		)
+		local t = e.c0:Inverse() * off * e.c1
+		t = t.Rotation + t.Position * scale
+		local p = t.Position
+		if p.X==p.X and p.Y==p.Y and p.Z==p.Z then m.Transform = t end
 	end
 end)
 
-RunService.RenderStepped:Connect(function(dt)
-	if not getgenv().LimbReanim then return end
-	if sethiddenproperty then pcall(function() sethiddenproperty(plr,"SimulationRadius",math.huge) end) end
-end)
-
-pcall(function() setup(); createClone() end)
+pcall(function() setup() end)
 
 plr.CharacterAdded:Connect(function()
 	getgenv().LimbReanim=false
-	for _,e in ipairs(joints) do if e.motor then e.motor.Enabled=true end; if e.bs then e.bs:Destroy() end; if e.att0 then e.att0:Destroy() end; if e.att1 then e.att1:Destroy() end end
-	table.clear(joints); if cloneChar and cloneChar.Parent then cloneChar:Destroy() end
+	for _,e in ipairs(motors) do if e.motor and e.motor.Parent then e.motor.Transform=CFrame.identity end end
+	table.clear(motors)
 end)
