@@ -78,34 +78,20 @@ RunService.PostSimulation:Connect(function(dt)
 		local tp = target.Position
 		if tp.X==tp.X and tp.Y==tp.Y and tp.Z==tp.Z then p.CFrame = target end
 		p.AssemblyAngularVelocity = Vector3.new(
-			math.sin(sine*1.3+ph)*15, math.sin(sine*1.1+ph*0.5)*18, math.sin(sine*0.9+ph*0.8)*12
+			math.sin(sine*1.3+ph)*6, math.sin(sine*1.1+ph*0.5)*8, math.sin(sine*0.9+ph*0.8)*5
 		)
 	end
-	if hrp and hrp.Parent then
-		hrp.AssemblyAngularVelocity = Vector3.new(
-			math.sin(sine*0.6)*8, math.sin(sine*0.8+1)*12, math.sin(sine*0.5+2)*6
-		)
-	end
+	if hrp and hrp.Parent then end
 	if cloneChar and cloneChar.Parent then
 		local cHRP = cloneChar:FindFirstChild("HumanoidRootPart")
 		if cHRP then cHRP.CFrame = hrp.CFrame * CFrame.new(15, 0, 0) end
 	end
 end)
 
-local camPart = Instance.new("Part",Workspace); camPart.Name="LimbCam"; camPart.Anchored=true; camPart.CanCollide=false; camPart.Transparency=1; camPart.Size=Vector3.new(0.2,0.2,0.2)
 RunService.RenderStepped:Connect(function(dt)
 	if not getgenv().LimbReanim then return end
 	local t=chr:FindFirstChild("Torso") or chr:FindFirstChild("UpperTorso") or hrp
 	if not t or not t.Parent then return end
-	local cp = t.Position; local la = cp
-	local cHRP = cloneChar and cloneChar.Parent and cloneChar:FindFirstChild("HumanoidRootPart")
-	if cHRP then la = (cp + cHRP.Position)/2; cp = la + Vector3.new(-8,5,12) else cp = cp + Vector3.new(0,2,-8) end
-	local cam=Workspace.CurrentCamera
-	if cam then
-		local sm=1-math.exp(-10*dt)
-		camPart.CFrame=camPart.CFrame:Lerp(CFrame.lookAt(cp,la),sm)
-		cam.CameraSubject=camPart; cam.CameraType=Enum.CameraType.Scriptable; cam.CFrame=camPart.CFrame
-	end
 	if sethiddenproperty then pcall(function() sethiddenproperty(plr,"SimulationRadius",math.huge) end) end
 end)
 
@@ -114,5 +100,5 @@ pcall(function() setup(); createClone() end)
 plr.CharacterAdded:Connect(function()
 	getgenv().LimbReanim=false
 	for _,e in ipairs(joints) do if e.motor then e.motor.Enabled=true end; if e.bs then e.bs:Destroy() end; if e.att0 then e.att0:Destroy() end; if e.att1 then e.att1:Destroy() end end
-	table.clear(joints); if camPart and camPart.Parent then camPart:Destroy() end; if cloneChar and cloneChar.Parent then cloneChar:Destroy() end
+	table.clear(joints); if cloneChar and cloneChar.Parent then cloneChar:Destroy() end
 end)
