@@ -1,13 +1,10 @@
 -- by using this script you agree to the terms and conditions
---dont skid, credit the owner if you use it or a clip of this script
+-- dont skid, credit the owner if you use it or a clip of this script
 -- thats it
--- loadstring(game:HttpGet("https://raw.githubusercontent.com/verycomplexaccountname/LuaReanimatev1/refs/heads/main/Reanimate%20v1"))()
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
-local CoreGui = game:GetService("CoreGui")
 
 if getgenv().LimbReanim == true then return end
 getgenv().LimbReanim = true
@@ -19,41 +16,100 @@ local hum = chr:WaitForChild("Humanoid")
 
 hum.BreakJointsOnDeath = false; hum.MaxHealth = math.huge; hum.Health = math.huge
 pcall(function() local a = chr:FindFirstChild("Animate"); if a then a:Destroy() end end)
--- keep animator alive so humanoid doesnt ragdoll
 
-local motors = {}; local sine = 0; local scale = chr:GetScale()
+local fakeChar = nil
+local jointMap = {} -- motor name -> real Motor6D
+local limbMap = {}  -- motor name -> fake limb part
 
 local function setup()
-	table.clear(motors)
+	-- build joint map
 	for _, v in ipairs(chr:GetDescendants()) do
 		if v:IsA("Motor6D") and v.Part0 and v.Part1 and v.Name ~= "RightGrip" then
-			table.insert(motors, {motor=v, c0=v.C0, c1=v.C1, name=v.Name})
+			jointMap[v.Name] = v
 		end
 	end
+	-- create fake character
+	if fakeChar and fakeChar.Parent then fakeChar:Destroy() end
+	fakeChar = chr:Clone()
+	fakeChar.Name = "Fake_"..chr.Name
+	fakeChar.Parent = Workspace
+	for _, v in ipairs(fakeChar:GetDescendants()) do
+		if v:IsA("BasePart") then v.CanCollide = false; v.Transparency = 1 end
+		if v:IsA("ForceField") then v:Destroy() end
+		if v:IsA("Sound") then v:Destroy() end
+	end
+	local fakeHum = fakeChar:FindFirstChildOfClass("Humanoid")
+	if fakeHum then fakeHum.BreakJointsOnDeath=false; fakeHum.MaxHealth=math.huge; fakeHum.Health=math.huge; fakeHum.DisplayDistanceType=Enum.HumanoidDisplayDistanceType.None end
+	-- map fake limbs
+	for name, motor in pairs(jointMap) do
+		local p1 = motor.Part1
+		if p1 then
+			local fakeLimb = fakeChar:FindFirstChild(p1.Name, true)
+			if fakeLimb then limbMap[name] = fakeLimb end
+		end
+	end
+	-- position fake char
+	local fakeHRP = fakeChar:FindFirstChild("HumanoidRootPart")
+	if fakeHRP then fakeHRP.CFrame = hrp.CFrame * CFrame.new(0, 0, 0); fakeHRP.Anchored = true end
 end
 
--- keep motor6ds enabled, drive Transform (replicates on good executors)
+local sine = 0
+
 RunService.Stepped:Connect(function()
 	settings().Physics.AllowSleep=false; plr.SimulationRadius=2147483647
-	if sethiddenproperty then pcall(function() sethiddenproperty(plr,"MaximumSimulationRadius",math.huge); plr.ReplicationFocus=chr end) end
+	if sethiddenproperty then pcall(function() sethiddenproperty(plr,"SimulationRadius",math.huge) end) end
 end)
 
 RunService.PostSimulation:Connect(function(dt)
 	if not getgenv().LimbReanim then return end
-	sine = sine + dt
-	for i, e in ipairs(motors) do
-		local m = e.motor
-		if not m or not m.Parent then continue end
-		local ph = (i / #motors) * math.pi * 2
-		local off = CFrame.new(
-			math.sin(sine*0.7+ph)*0.5, math.sin(sine*0.9+ph+0.5)*0.5, math.cos(sine*1.1+ph+1)*0.5
-		) * CFrame.Angles(
-			math.sin(sine*1.3+ph*0.5)*0.3, math.sin(sine*1.1+ph*0.3)*0.4, math.sin(sine*0.8+ph*0.7)*0.25
-		)
-		local t = e.c0:Inverse() * off * e.c1
-		t = t.Rotation + t.Position * scale
-		local p = t.Position
-		if p.X==p.X and p.Y==p.Y and p.Z==p.Z then m.Transform = t end
+	sine = sine + dt * 0.8
+
+	-- animate fake character (localspace so it naturally looks correct)
+	local fakeTorso = fakeChar and fakeChar:FindFirstChild("Torso") or (fakeChar and fakeChar:FindFirstChild("UpperTorso"))
+	if not fakeTorso then return end
+
+	local fakeHead = fakeChar:FindFirstChild("Head")
+	local fakeRA = fakeChar:FindFirstChild("Right Arm") or fakeChar:FindFirstChild("RightHand")
+	local fakeLA = fakeChar:FindFirstChild("Left Arm") or fakeChar:FindFirstChild("LeftHand")
+	local fakeRL = fakeChar:FindFirstChild("Right Leg") or fakeChar:FindFirstChild("RightFoot")
+	local fakeLL = fakeChar:FindFirstChild("Left Leg") or fakeChar:FindFirstChild("LeftFoot")
+
+	-- animate head
+	if fakeHead then
+		fakeHead.CFrame = fakeTorso.CFrame * CFrame.new(0, 1, 0) * CFrame.Angles(math.sin(sine*0.5)*0.1, math.sin(sine*0.3)*0.15, math.sin(sine*0.7)*0.05)
+	end
+	-- arms
+	if fakeRA then
+		fakeRA.CFrame = fakeTorso.CFrame * CFrame.new(1.5, 0.5, 0) * CFrame.Angles(math.sin(sine*0.7)*0.4, math.sin(sine*0.5+1)*0.3, math.sin(sine*0.9)*0.15)
+	end
+	if fakeLA then
+		fakeLA.CFrame = fakeTorso.CFrame * CFrame.new(-1.5, 0.5, 0) * CFrame.Angles(math.sin(sine*0.7+math.pi)*0.4, math.sin(sine*0.5+1+math.pi)*0.3, math.sin(sine*0.9+math.pi)*0.15)
+	end
+	-- legs
+	if fakeRL then
+		fakeRL.CFrame = fakeTorso.CFrame * CFrame.new(0.5, -1, 0) * CFrame.Angles(math.sin(sine*0.6)*0.3, math.sin(sine*0.4+2)*0.15, 0)
+	end
+	if fakeLL then
+		fakeLL.CFrame = fakeTorso.CFrame * CFrame.new(-0.5, -1, 0) * CFrame.Angles(math.sin(sine*0.6+math.pi)*0.3, math.sin(sine*0.4+2+math.pi)*0.15, 0)
+	end
+
+	-- now sync real joints via DesiredAngle
+	for name, motor in pairs(jointMap) do
+		local fakeLimb = limbMap[name]
+		if not fakeLimb or not fakeLimb.Parent then continue end
+		local rel = fakeTorso.CFrame:ToObjectSpace(fakeLimb.CFrame)
+		local pitch, yaw, _ = rel:ToEulerAnglesXYZ()
+
+		local angle = 0
+		if name == "Neck" or name == "RootJoint" or name:find("Root") then
+			angle = -yaw
+		elseif name:find("Left") then
+			angle = pitch
+		elseif name:find("Right") then
+			angle = -pitch
+		end
+		motor.DesiredAngle = angle
+		motor.CurrentAngle = angle
 	end
 end)
 
@@ -61,6 +117,6 @@ pcall(function() setup() end)
 
 plr.CharacterAdded:Connect(function()
 	getgenv().LimbReanim=false
-	for _,e in ipairs(motors) do if e.motor and e.motor.Parent then e.motor.Transform=CFrame.identity end end
-	table.clear(motors)
+	if fakeChar and fakeChar.Parent then fakeChar:Destroy() end
+	table.clear(jointMap); table.clear(limbMap)
 end)
