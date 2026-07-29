@@ -19,13 +19,7 @@ local hum = chr:WaitForChild("Humanoid")
 
 hum.BreakJointsOnDeath = false; hum.MaxHealth = math.huge; hum.Health = math.huge
 pcall(function() local a = chr:FindFirstChild("Animate"); if a then a:Destroy() end end)
-pcall(function()
-	local animator = hum:FindFirstChildOfClass("Animator")
-	if animator then
-		for _, track in ipairs(animator:GetPlayingAnimationTracks()) do track:Stop() end
-		animator:Destroy()
-	end
-end)
+-- keep animator alive so humanoid doesnt ragdoll
 
 local motors = {}; local sine = 0; local scale = chr:GetScale()
 
