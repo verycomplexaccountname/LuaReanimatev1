@@ -25,8 +25,13 @@ pcall(function()
 		for _, track in ipairs(animator:GetPlayingAnimationTracks()) do track:Stop() end
 		animator:Destroy()
 	end
-	hum.EvaluateStateMachine = false
 end)
+-- keep parts collidable so char doesnt fall through
+pcall(function()
+	if hrp then hrp.CanCollide = true end
+end)
+-- root anchored false so char stays where spawned
+if hrp and hrp.Parent then hrp.Anchored = false end
 
 local joints = {}; local sine = 0
 local cloneChar = nil
