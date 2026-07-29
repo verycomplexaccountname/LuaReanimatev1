@@ -1,0 +1,118 @@
+-- by using this script you agree to the terms and conditions
+--dont skid, credit the owner if you use it or a clip of this script
+-- thats it
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
+
+if getgenv().LimbReanim == true then return end
+getgenv().LimbReanim = true
+
+local plr = Players.LocalPlayer
+local chr = plr.Character or plr.CharacterAdded:Wait()
+local hrp = chr:WaitForChild("HumanoidRootPart")
+local hum = chr:WaitForChild("Humanoid")
+
+hum.BreakJointsOnDeath = false; hum.MaxHealth = math.huge; hum.Health = math.huge
+for _, p in ipairs(chr:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
+pcall(function() local a = chr:FindFirstChild("Animate"); if a then a:Destroy() end end)
+
+local joints = {}; local sine = 0
+local cloneChar = nil
+
+local function setup()
+	table.clear(joints)
+	for _, v in ipairs(chr:GetDescendants()) do
+		if not v:IsA("Motor6D") or not v.Part0 or not v.Part1 or v.Name == "RightGrip" then continue end
+		local p0, p1 = v.Part0, v.Part1
+		v.Enabled = false
+		local att0 = Instance.new("Attachment"); att0.Name=v.Name.."_C0"; att0.CFrame=v.C0; att0.Parent=p0
+		local att1 = Instance.new("Attachment"); att1.Name=v.Name.."_C1"; att1.CFrame=v.C1; att1.Parent=p1
+		local bs = Instance.new("BallSocketConstraint"); bs.Name=v.Name.."_BS"
+		bs.Attachment0=att0; bs.Attachment1=att1; bs.Parent=p0; bs.LimitsEnabled=false
+		table.insert(joints,{motor=v,bs=bs,att0=att0,att1=att1,p1=p1,name=v.Name})
+	end
+end
+
+local function createClone()
+	if cloneChar and cloneChar.Parent then cloneChar:Destroy() end
+	cloneChar = chr:Clone(); cloneChar.Name = "Spec_"..chr.Name; cloneChar.Parent = Workspace
+	for _, v in ipairs(cloneChar:GetDescendants()) do
+		if v:IsA("BasePart") then v.CanCollide = false; v.Transparency = 0.5 end
+		if v:IsA("ForceField") then v:Destroy() end
+	end
+	local hClone = cloneChar:FindFirstChildOfClass("Humanoid")
+	if hClone then hClone.BreakJointsOnDeath=false; hClone.MaxHealth=math.huge; hClone.Health=math.huge; hClone.DisplayDistanceType=Enum.HumanoidDisplayDistanceType.None
+		local aClone=hClone:FindFirstChildOfClass("Animator"); if aClone then aClone:Destroy() end end
+	local hrpClone = cloneChar:FindFirstChild("HumanoidRootPart")
+	if hrpClone then hrpClone.CFrame=hrp.CFrame*CFrame.new(15,0,0); hrpClone.Anchored=true end
+	local head = cloneChar:FindFirstChild("Head") or cloneChar:FindFirstChild("HumanoidRootPart")
+	if head then
+		local bill = Instance.new("BillboardGui",head); bill.Size=UDim2.new(0,120,0,30); bill.StudsOffset=Vector3.new(0,3,0)
+		local txt = Instance.new("TextLabel",bill); txt.Size=UDim2.new(1,0,1,0); txt.BackgroundTransparency=1
+		txt.Text="OTHERS SEE THIS"; txt.Font=Enum.Font.Code; txt.TextSize=12; txt.TextColor3=Color3.fromRGB(255,200,100); txt.TextStrokeTransparency=0.3
+	end
+end
+
+RunService.Stepped:Connect(function()
+	settings().Physics.AllowSleep=false; plr.SimulationRadius=2147483647
+	pcall(function() sethiddenproperty(plr,"MaximumSimulationRadius",math.huge); plr.ReplicationFocus=chr end)
+end)
+
+RunService.PostSimulation:Connect(function(dt)
+	if not getgenv().LimbReanim then return end
+	sine = sine + dt
+	local torso = chr:FindFirstChild("Torso") or chr:FindFirstChild("UpperTorso") or hrp
+	if not torso then return end
+
+	for i, e in ipairs(joints) do
+		local p = e.p1; if not p or not p.Parent then continue end
+		local ph = (i / #joints) * math.pi * 2
+		local target = torso.CFrame * CFrame.new(
+			math.sin(sine*0.7+ph)*1.5, math.sin(sine*0.9+ph+0.5)*1.5, math.cos(sine*1.1+ph+1)*1.5
+		) * CFrame.Angles(
+			math.sin(sine*1.3+ph*0.5)*0.7, math.sin(sine*1.1+ph*0.3)*0.96, math.sin(sine*0.8+ph*0.7)*0.61
+		)
+		local tp = target.Position
+		if tp.X==tp.X and tp.Y==tp.Y and tp.Z==tp.Z then p.CFrame = target end
+		p.AssemblyAngularVelocity = Vector3.new(
+			math.sin(sine*1.3+ph)*15, math.sin(sine*1.1+ph*0.5)*18, math.sin(sine*0.9+ph*0.8)*12
+		)
+	end
+	if hrp and hrp.Parent then
+		hrp.AssemblyAngularVelocity = Vector3.new(
+			math.sin(sine*0.6)*8, math.sin(sine*0.8+1)*12, math.sin(sine*0.5+2)*6
+		)
+	end
+	if cloneChar and cloneChar.Parent then
+		local cHRP = cloneChar:FindFirstChild("HumanoidRootPart")
+		if cHRP then cHRP.CFrame = hrp.CFrame * CFrame.new(15, 0, 0) end
+	end
+end)
+
+local camPart = Instance.new("Part",Workspace); camPart.Name="LimbCam"; camPart.Anchored=true; camPart.CanCollide=false; camPart.Transparency=1; camPart.Size=Vector3.new(0.2,0.2,0.2)
+RunService.RenderStepped:Connect(function(dt)
+	if not getgenv().LimbReanim then return end
+	local t=chr:FindFirstChild("Torso") or chr:FindFirstChild("UpperTorso") or hrp
+	if not t or not t.Parent then return end
+	local cp = t.Position; local la = cp
+	local cHRP = cloneChar and cloneChar.Parent and cloneChar:FindFirstChild("HumanoidRootPart")
+	if cHRP then la = (cp + cHRP.Position)/2; cp = la + Vector3.new(-8,5,12) else cp = cp + Vector3.new(0,2,-8) end
+	local cam=Workspace.CurrentCamera
+	if cam then
+		local sm=1-math.exp(-10*dt)
+		camPart.CFrame=camPart.CFrame:Lerp(CFrame.lookAt(cp,la),sm)
+		cam.CameraSubject=camPart; cam.CameraType=Enum.CameraType.Scriptable; cam.CFrame=camPart.CFrame
+	end
+	if sethiddenproperty then pcall(function() sethiddenproperty(plr,"SimulationRadius",math.huge) end) end
+end)
+
+pcall(function() setup(); createClone() end)
+
+plr.CharacterAdded:Connect(function()
+	getgenv().LimbReanim=false
+	for _,e in ipairs(joints) do if e.motor then e.motor.Enabled=true end; if e.bs then e.bs:Destroy() end; if e.att0 then e.att0:Destroy() end; if e.att1 then e.att1:Destroy() end end
+	table.clear(joints); if camPart and camPart.Parent then camPart:Destroy() end; if cloneChar and cloneChar.Parent then cloneChar:Destroy() end
+end)
