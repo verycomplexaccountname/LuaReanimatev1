@@ -17,7 +17,6 @@ local hrp = chr:WaitForChild("HumanoidRootPart")
 local hum = chr:WaitForChild("Humanoid")
 
 hum.BreakJointsOnDeath = false; hum.MaxHealth = math.huge; hum.Health = math.huge
-for _, p in ipairs(chr:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
 pcall(function() local a = chr:FindFirstChild("Animate"); if a then a:Destroy() end end)
 pcall(function()
 	local animator = hum:FindFirstChildOfClass("Animator")
@@ -26,12 +25,6 @@ pcall(function()
 		animator:Destroy()
 	end
 end)
--- keep parts collidable so char doesnt fall through
-pcall(function()
-	if hrp then hrp.CanCollide = true end
-end)
--- root anchored false so char stays where spawned
-if hrp and hrp.Parent then hrp.Anchored = false end
 
 local joints = {}; local sine = 0
 local cloneChar = nil
@@ -92,10 +85,9 @@ RunService.PostSimulation:Connect(function(dt)
 		local tp = target.Position
 		if tp.X==tp.X and tp.Y==tp.Y and tp.Z==tp.Z then p.CFrame = target end
 		p.AssemblyAngularVelocity = Vector3.new(
-			math.sin(sine*1.3+ph)*6, math.sin(sine*1.1+ph*0.5)*8, math.sin(sine*0.9+ph*0.8)*5
+			math.sin(sine*1.3+ph)*2, math.sin(sine*1.1+ph*0.5)*3, math.sin(sine*0.9+ph*0.8)*2
 		)
 	end
-	if hrp and hrp.Parent then end
 	if cloneChar and cloneChar.Parent then
 		local cHRP = cloneChar:FindFirstChild("HumanoidRootPart")
 		if cHRP then cHRP.CFrame = hrp.CFrame * CFrame.new(15, 0, 0) end
