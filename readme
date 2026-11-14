@@ -2,11 +2,7 @@
 
 The Why Revived site, with a public [Wisp](https://github.com/MercuryWorkshop/wisp-protocol/blob/v2/protocol.md) server behind it (v2, and v1 for libcurl.js). Cloudflare publishes the page and the websocket, so both stay reachable without a console attached.
 
-The websocket endpoint is `/wisp/` and always ends with a slash. Clients that send `Sec-WebSocket-Protocol` speak v2. Clients that omit it get v1.
-
-Private, loopback, link-local, and metadata addresses are refused. Mail ports 25, 465, and 587 are refused too.
-
-`fetch.php` is the PHP backend for the InfinityFree copy. A `__pot=` value opens a page. A search reads Brave Search and prints the quiet result list.
+This is basically a web proxy with two backends, 1 is fetch.php 2, is WISP, normally you would make a public wisp using cloudflare.
 
 ## Run
 
