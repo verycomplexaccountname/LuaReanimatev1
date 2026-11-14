@@ -1,1 +1,32 @@
+# Why Revived
 
+The Why Revived site, with a public [Wisp](https://github.com/MercuryWorkshop/wisp-protocol/blob/v2/protocol.md) server behind it (v2, and v1 for libcurl.js). Cloudflare publishes the page and the websocket, so both stay reachable without a console attached.
+
+The websocket endpoint is `/wisp/` and always ends with a slash. Clients that send `Sec-WebSocket-Protocol` speak v2. Clients that omit it get v1.
+
+Private, loopback, link-local, and metadata addresses are refused. Mail ports 25, 465, and 587 are refused too.
+
+`fetch.php` is the PHP backend for the InfinityFree copy. A `__pot=` value opens a page. A search reads Brave Search and prints the quiet result list.
+
+## Run
+
+```bash
+npm install
+npm run public
+```
+
+That starts the server and a Cloudflare quick tunnel. The page shows the public `wss://…/wisp/` address once the tunnel is up. Restarting the tunnel gives a new address.
+
+To run only the server:
+
+```bash
+npm start
+```
+
+Then check the handshake, a blocked destination, and a real TCP stream:
+
+```bash
+npm run check
+```
+
+Open the site at the local server root, or at the `https://….trycloudflare.com` address printed by the tunnel.
